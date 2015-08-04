@@ -72,8 +72,10 @@ var autocomplete = function(text, suggest) {
 };
 
 var gotoword = function(text, disposition) {
+	if( !text || !text.trim() ) return; // empty query string
+	
 	// http://www.oxfordlearnersdictionaries.com/search/english/?q=
-	var param = {q: text};
+	var param = {q: text.trimLeft()};
 	var url = 'http://www.oxfordlearnersdictionaries.com/search/english/?' + o2p(param);
 	navigate(url);
 };
