@@ -1,11 +1,20 @@
 {
 	"background": {
 		"persistent": false,
-		"scripts": ["background.js"]
+		"scripts": ["init.js", "background.js"]
 	},
 	"manifest_version": 2,
 	"name": "Oxford Learner's Dictionaries (Unofficial)",
 	"omnibox": { "keyword" : "o" },
-	"permissions": [ "*://*.oxfordlearnersdictionaries.com/" ],
-	"version": "0.3"
+	"options_page": "options.html",
+	"options_ui": {
+		"chrome_style": true,
+		"page": "options.html"
+	},
+	"permissions": [
+		"*://*.oxfordlearnersdictionaries.com/",
+		"*://*.oxforddictionaries.com/",
+		"storage"
+	],
+	"version": "0.4"
 }
