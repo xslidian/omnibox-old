@@ -4,8 +4,8 @@
 		"scripts": ["background.js"]
 	},
 	"manifest_version": 2,
-	"name": "Oxford Learner's Dictionaries",
+	"name": "Oxford Learner's Dictionaries (Unofficial)",
 	"omnibox": { "keyword" : "o" },
 	"permissions": [ "*://*.oxfordlearnersdictionaries.com/" ],
-	"version": "0.1"
+	"version": "0.2"
 }

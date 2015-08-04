@@ -58,8 +58,8 @@ var autocomplete2suggest = function(data, extras) {
 				description: '<url>' + v.searchtext.replace(re, '<match>$1</match>') + '</url><dim> from Oxford Learner\'s Dictionaries</dim>'
 			});
 		});
+		querycache[extras.text] = a;
 	}
-	if(a.length) querycache[extras.text] = a;
 	return extras.callback(a);
 };
 
