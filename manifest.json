@@ -1,0 +1,11 @@
+{
+	"background": {
+		"persistent": false,
+		"scripts": ["background.js"]
+	},
+	"manifest_version": 2,
+	"name": "Oxford Learner's Dictionaries",
+	"omnibox": { "keyword" : "o" },
+	"permissions": [ "*://*.oxfordlearnersdictionaries.com/" ],
+	"version": "0.1"
+}
