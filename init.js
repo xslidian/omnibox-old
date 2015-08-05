@@ -48,8 +48,17 @@ var jsonr = function(method, url, data, callback, callbackparam){
 	xhr.send(data);
 };
 
+var text2tp = function(text) {
+	text = text.replace(/[`^]/g, '#');
+	var term = text.split('#')[0];
+	var matches = text.match(/#/g);
+	var page = matches === null ? 0 : matches.length;
+	return {term: term, page: page};
+};
+
 var autocomplete2suggest = function(data, extras) {
 	var a = new Array();
+	var tp = text2tp(extras.text);
 	if(data && data.results != undefined) {
 		data.results.forEach(function(v){
 			var re = new RegExp('(' + escapeRegExp(extras.text) + ')', 'i');
@@ -60,17 +69,27 @@ var autocomplete2suggest = function(data, extras) {
 		});
 		a.push({
 			content: '___CHANGE_SETTINGS___',
-			description: '<dim>searching <match>' + extras.text + '</match> in <match>' + sitedicts[vars.site][vars.dict].label + ' ' + sitenames[vars.site] + '</match>... </dim> <url><match>Change</match></url>'
+			description: '<dim>searching <match>' + tp.term + '</match> in <match>' + sitedicts[vars.site][vars.dict].label + ' ' + sitenames[vars.site] + '</match>... </dim> <url><match>Change</match></url>'
 		});
-		querycache[vars.site + vars.dict + extras.text] = a;
+		// querycache[vars.site + vars.dict + extras.text] = a;
+		var totalpages = Math.floor(a.length / limit_suggestions) + (a.length % limit_suggestions ? 1 : 0);
+		for(var i = 0; i < a.length / limit_suggestions; i++) {
+			var arr = a.slice(i * limit_suggestions, (i + 1) * limit_suggestions);
+			if(totalpages > 1)arr.push({
+				content: tp.term + '#'.repeat(i + 1),
+				description: '<match>' + (i + 1) + '</match>/' + totalpages + '. ' + (a.length - 1) + ' total. <dim>Add or remove <url><match>#</match></url> or <url><match>`</match></url> for more results.</dim>'
+			});
+			querycache[vars.site + vars.dict + i + tp.term] = arr;
+		}
 	}
-	return extras.callback(a);
+	return extras.callback(querycache[vars.site + vars.dict + tp.page + tp.term]);
 };
 
 var autocomplete = function(text, suggest) {
-	if(querycache[vars.site + vars.dict + text] != undefined) return suggest(querycache[vars.site + vars.dict + text]);
+	var tp = text2tp(text);
+	if(querycache[vars.site + vars.dict + 0 + tp.term] != undefined) return suggest(querycache[vars.site + vars.dict + tp.page + tp.term] || querycache[vars.site + vars.dict + 0 + tp.term]);
 	
-	var url = geturl(vars.site, 'autocomplete', vars.dict, text);
+	var url = geturl(vars.site, 'autocomplete', vars.dict, tp.term);
 	if(url) return jsonr('get', url, null, autocomplete2suggest, {
 		text: text,
 		callback: suggest,
@@ -88,8 +107,8 @@ var gotooptions = function(){
 var gotoword = function(text, disposition) {
 	if( !text || !text.trim() ) return; // empty query string
 	if(text == '___CHANGE_SETTINGS___') return gotooptions();
-	
-	var url = geturl(vars.site, 'search', vars.dict, text.trimLeft());
+	var tp = text2tp(text.trimLeft());
+	var url = geturl(vars.site, 'search', vars.dict, tp.term);
 	if(url) navigate(url);
 };
 
@@ -104,6 +123,7 @@ var siteurls = {
 		// http://www.oxfordlearnersdictionaries.com/autocomplete/american_english/?q=test&contentType=...
 		autocomplete: 'http://www.oxfordlearnersdictionaries.com/autocomplete/DICT/',
 		// http://www.oxfordlearnersdictionaries.com/search/english/?q=
+		searchall: 'http://www.oxfordlearnersdictionaries.com/search/DICT/',
 		search: 'http://www.oxfordlearnersdictionaries.com/search/DICT/'
 	},
 	od: {
@@ -174,6 +194,11 @@ var geturl = function(site, action, dict, query) {
 			param['direct'] = 1;
 			param['dictCode'] = dict;
 		}
+	} else if (action == 'searchall') {
+		if(site == 'od') {
+			param['multi'] = 1;
+			param['dictCode'] = dict;
+		}
 	}
 	return url + '?' + o2p(param);
 };
@@ -186,4 +211,8 @@ var vars = {
 chrome.storage.sync.get(vars, function(r){
 	vars = r;
 });
+
+// https://chromium.googlesource.com/chromium/chromium/+/master/chrome/browser/autocomplete/autocomplete_result.cc
+// const size_t AutocompleteResult::kMaxMatches = 6;
+var limit_suggestions = 6 - 2;
 
