@@ -82,7 +82,7 @@ var autocomplete2suggest = function(data, extras) {
 			querycache[vars.site + vars.dict + i + tp.term] = arr;
 		}
 	}
-	return extras.callback(querycache[vars.site + vars.dict + tp.page + tp.term]);
+	return extras.callback(querycache[vars.site + vars.dict + tp.page + tp.term] || querycache[vars.site + vars.dict + 0 + tp.term]);
 };
 
 var autocomplete = function(text, suggest) {
