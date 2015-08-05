@@ -1,6 +1,6 @@
 
 
-var fillselect = function(e, kv, subkey) {
+var fillselect = function(e, kv, subkey, selectedvalue) {
 	e.innerHTML = '';
 	for (var k in kv) {
 		if (kv.hasOwnProperty(k)) {
@@ -9,6 +9,7 @@ var fillselect = function(e, kv, subkey) {
 			o.setAttribute('type', 'radio');
 			o.setAttribute('name', 'r_' + e.id);
 			o.setAttribute('value', k);
+			if(selectedvalue && k == selectedvalue) o.checked = true;
 			l.appendChild(o);
 			var t = document.createTextNode( subkey ? kv[k][subkey] : kv[k] );
 			l.appendChild(t);
@@ -40,7 +41,7 @@ var radioset = function(name, val) {
 };
 
 s_site.onchange = function() {
-	fillselect(s_dict, sitedicts[radioget('r_s_site')], 'desc');
+	fillselect(s_dict, sitedicts[radioget('r_s_site')], 'desc', vars.dict);
 };
 
 b_save.onclick = function() {
@@ -59,7 +60,7 @@ b_save.onclick = function() {
 	});
 };
 
-fillselect(s_site, sitenames);
+fillselect(s_site, sitenames, null, vars.site);
 
 chrome.storage.sync.get(vars, function(r){
 	console.log(vars, r);
