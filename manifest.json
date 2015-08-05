@@ -4,7 +4,7 @@
 		"scripts": ["init.js", "background.js"]
 	},
 	"manifest_version": 2,
-	"name": "Oxford Learner's Dictionaries (Unofficial)",
+	"name": "Oxford Dictionaries (Unofficial)",
 	"omnibox": { "keyword" : "o" },
 	"options_page": "options.html",
 	"options_ui": {

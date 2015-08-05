@@ -228,8 +228,8 @@ var geturl = function(site, action, dict, query) {
 };
 
 var vars = {
-	dict: 'english',
-	site: 'old'
+	dict: 'all',
+	site: 'od'
 };
 
 var reloadvars = function() {
