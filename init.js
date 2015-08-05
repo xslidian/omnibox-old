@@ -228,13 +228,18 @@ var geturl = function(site, action, dict, query) {
 };
 
 var vars = {
-	dict: 'all',
+	dict: 'english',
 	site: 'od'
 };
+
+var default_vars = vars;
 
 var reloadvars = function() {
 	chrome.storage.sync.get(vars, function(r){
 		console.log(vars, r);
+		for (var k in r) {
+			if (r.hasOwnProperty(k) && !r[k]) r[k] = default_vars[k];
+		}
 		vars = r;
 	});
 };

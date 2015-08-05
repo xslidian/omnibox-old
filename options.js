@@ -46,8 +46,8 @@ s_site.onchange = function() {
 
 b_save.onclick = function() {
 	chrome.storage.sync.set({
-		site: radioget('r_s_site'),
-		dict: radioget('r_s_dict')
+		site: radioget('r_s_site') || default_vars.site,
+		dict: radioget('r_s_dict') || default_vars.dict
 	}, function(){
 		msg.innerText = 'Saved.';
 		msg.display = 'block';
