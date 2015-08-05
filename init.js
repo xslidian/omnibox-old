@@ -53,7 +53,9 @@ var text2tp = function(text) {
 	var term = text.split('#')[0];
 	var matches = text.match(/#/g);
 	var page = matches === null ? 0 : matches.length;
-	return {term: term, page: page};
+	var temp = text.split(/#+/);
+	var dict = temp.length > 1 ? temp.reverse()[0] : vars.dict;
+	return {term: term, page: page, dict: dict};
 };
 
 var autocomplete2suggest = function(data, extras) {
@@ -61,10 +63,13 @@ var autocomplete2suggest = function(data, extras) {
 	var tp = text2tp(extras.text);
 	if(data && data.results != undefined) {
 		data.results.forEach(function(v){
+			var dictionaries = v.dictionaries && typeof v.dictionaries == "object" && v.dictionaries.length ? v.dictionaries : [vars.dict];
 			var re = new RegExp('(' + escapeRegExp(extras.text) + ')', 'i');
-			a.push({
-				content: v.searchtext,
-				description: '<url>' + v.searchtext.replace(re, '<match>$1</match>') + '</url><dim> from ' + sitenames[vars.site] + '</dim>'
+			dictionaries.forEach(function(dict){
+				a.push({
+					content: vars.dict == dict ? v.searchtext : v.searchtext + '#' + dict,
+					description: '<url>' + v.searchtext.replace(re, '<match>$1</match>') + '</url><dim> from <url>' + sitedicts[vars.site][dict].label + '</url> of ' + sitenames[vars.site] + '</dim>'
+			});
 			});
 		});
 		a.push({
@@ -114,7 +119,7 @@ var gotoword = function(text, disposition) {
 	if( !text || !text.trim() ) return; // empty query string
 	if(text == '___CHANGE_SETTINGS___') return gotooptions();
 	var tp = text2tp(text.trimLeft());
-	var url = geturl(vars.site, 'search', vars.dict, tp.term);
+	var url = geturl(vars.site, 'search', tp.dict, tp.term);
 	if(url) navigate(url);
 };
 
