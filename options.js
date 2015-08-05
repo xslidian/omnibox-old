@@ -24,6 +24,7 @@ b_save.onclick = function() {
 		msg.innerText = 'Saved.';
 		msg.display = 'block';
 		reloadbg();
+		reloadvars();
 		setTimeout(function(){
 			msg.display = 'none';
 			msg.innerText = '';

@@ -214,9 +214,14 @@ var vars = {
 	site: 'old'
 };
 
-chrome.storage.sync.get(vars, function(r){
-	vars = r;
-});
+var reloadvars = function() {
+	chrome.storage.sync.get(vars, function(r){
+		console.log(vars, r);
+		vars = r;
+	});
+};
+
+reloadvars();
 
 // https://chromium.googlesource.com/chromium/chromium/+/master/chrome/browser/autocomplete/autocomplete_result.cc
 // const size_t AutocompleteResult::kMaxMatches = 6;
