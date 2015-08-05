@@ -62,9 +62,7 @@ b_save.onclick = function() {
 
 fillselect(s_site, sitenames, null, vars.site);
 
-chrome.storage.sync.get(vars, function(r){
-	console.log(vars, r);
-	vars = r;
+reloadvars(function(r){
 	radioset('r_s_site', vars.site);
 	s_site.onchange();
 	setTimeout(function(){
