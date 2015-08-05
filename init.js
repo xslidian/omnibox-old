@@ -172,8 +172,8 @@ Grammar	words	false	Grammar & usage
 */
 var sitedicts = {
 	old: {
-		'all': { label: 'All', desc: 'All' },
-		'english': { label: 'Eng (UK)', desc: 'British & World English' }
+		'english': { label: 'Eng (UK)', desc: 'British & World English' },
+		'american_english': { label: 'Eng (US)', desc: 'US English' }
 	},
 	od: {
 		'all': { label: 'All', desc: 'All' },
