@@ -104,6 +104,12 @@ var gotooptions = function(){
 	return;
 }
 
+var reloadbg = function(){
+	chrome.runtime.getBackgroundPage(function(b) {
+		b.document.location.reload();
+	});
+};
+
 var gotoword = function(text, disposition) {
 	if( !text || !text.trim() ) return; // empty query string
 	if(text == '___CHANGE_SETTINGS___') return gotooptions();
