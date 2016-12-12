@@ -74,7 +74,9 @@ var autocomplete2suggest = function(data, extras) {
 		});
 		a.push({
 			content: '___CHANGE_SETTINGS___',
-			description: '<dim>searching <match>' + tp.term + '</match> in <match>' + sitedicts[vars.site][vars.dict].label + ' ' + sitenames[vars.site] + '</match>... </dim> <url><match>Change</match></url>'
+			description: !a.length ?
+				'<dim>No matching entries.</dim> <url><match>Change dictionary</match></url>' :
+				'<dim>dictionary: <match>' + sitenames[vars.site] + '</match> / <match>' + sitedicts[vars.site][vars.dict].label + '</match></dim> <url><match>Change</match></url>'
 		});
 		// querycache[vars.site + vars.dict + extras.text] = a;
 		var totalpages = Math.floor(a.length / limit_suggestions) + (a.length % limit_suggestions ? 1 : 0);
@@ -87,7 +89,10 @@ var autocomplete2suggest = function(data, extras) {
 			querycache[vars.site + vars.dict + i + tp.term] = arr;
 		}
 	}
-	return extras.callback(querycache[vars.site + vars.dict + tp.page + tp.term] || querycache[vars.site + vars.dict + 0 + tp.term]);
+	return extras.callback(querycache[vars.site + vars.dict + tp.page + tp.term] || querycache[vars.site + vars.dict + 0 + tp.term] || [{
+		content: '___CHANGE_SETTINGS___',
+		description: '<dim>Request error. Please report to the author or <url>change settings</url>.</dim>'
+	}]);
 };
 
 var autocomplete = function(text, suggest) {
@@ -101,6 +106,10 @@ var autocomplete = function(text, suggest) {
 		site: vars.site,
 		dict: vars.dict
 	});
+	suggest([{
+		content: '___CHANGE_SETTINGS___',
+		description: '<dim>invalid request url, please report to the author. </dim> <url><match>Change settings</match></url>'
+	}]);
 };
 
 var gotooptions = function(){
@@ -121,6 +130,7 @@ var gotoword = function(text, disposition) {
 	var tp = text2tp(text.trimLeft());
 	var url = geturl(vars.site, 'search', tp.dict, tp.term);
 	if(url) navigate(url);
+	else gotooptions();
 };
 
 
@@ -137,7 +147,7 @@ var siteurls = {
 		searchall: 'http://www.oxfordlearnersdictionaries.com/search/DICT/',
 		search: 'http://www.oxfordlearnersdictionaries.com/search/DICT/'
 	},
-	od: {
+	_od: {
 		// http://www.oxforddictionaries.com/autocomplete/all/?multi=1&q=test&contentType=application%2Fjson%3B+charset%3Dutf-8
 		autocomplete: 'http://www.oxforddictionaries.com/autocomplete/DICT/', // ?multi=1&q=test&contentType=...
 		search: 'http://www.oxforddictionaries.com/search/', // ?direct=1&dictCode=english&q=test
@@ -146,6 +156,13 @@ var siteurls = {
 };
 
 /*
+english English false
+american_english American English false
+practical-english-usage Practical English Usage true
+schulwoerterbuch_German-English German-English true
+schulwoerterbuch_English-German English-German true
+
+
 data-label	value	locked	innerHTML
 All	all	false	All
 Eng (UK)	english	false	British & World English
@@ -178,9 +195,12 @@ Grammar	words	false	Grammar & usage
 var sitedicts = {
 	old: {
 		'english': { label: 'Eng (UK)', desc: 'British & World English' },
-		'american_english': { label: 'Eng (US)', desc: 'US English' }
+		'american_english': { label: 'Eng (US)', desc: 'US English' },
+		'practical-english-usage': { label: 'Practical English Usage', desc: 'Practical English Usage (*)' },
+		'schulwoerterbuch_German-English': { label: 'Ger > Eng', desc: 'German-English (*)' },
+		'schulwoerterbuch_English-German': { label: 'Eng > Ger', desc: 'US English (*)' }
 	},
-	od: {
+	_od: {
 		'all': { label: 'All', desc: 'All' },
 		'english': { label: 'Eng (UK)', desc: 'British & World English' },
 		'american_english': { label: 'Eng (US)', desc: 'US English' },
@@ -234,7 +254,7 @@ var geturl = function(site, action, dict, query) {
 
 var vars = {
 	dict: 'english',
-	site: 'od'
+	site: 'old'
 };
 
 var default_vars = vars;
@@ -246,6 +266,8 @@ var reloadvars = function(callback) {
 			if (r.hasOwnProperty(k) && !r[k]) r[k] = default_vars[k];
 		}
 		vars = r;
+		if(!sitedicts.hasOwnProperty(vars.site)) vars.site = default_vars.site;
+		if(!sitedicts[vars.site].hasOwnProperty(vars.dict)) vars.dict = default_vars.dict;
 		if(callback) callback(r);
 	});
 };
