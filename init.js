@@ -1,4 +1,4 @@
-
+﻿
 function navigate(url) {
 	// taken from https://developer.chrome.com/extensions/examples/extensions/chrome_search/background.js
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -12,6 +12,37 @@ function escapeRegExp(string){
 }
 
 
+/*
+English	https://en.oxforddictionaries.com/
+Spanish	https://es.oxforddictionaries.com/
+Hindi	https://hi.oxforddictionaries.com/
+Indonesian	https://id.oxforddictionaries.com/
+isiZulu	https://zu.oxforddictionaries.com/
+Latvian	https://lv.oxforddictionaries.com/
+Malay	https://ms.oxforddictionaries.com/
+Northern Sotho	https://nso.oxforddictionaries.com/
+Romanian	https://ro.oxforddictionaries.com/
+Setswana	https://tn.oxforddictionaries.com/
+Swahili	https://sw.oxforddictionaries.com/
+Urdu	https://ur.oxforddictionaries.com/
+Other Languages	http://en.bab.la/
+*/
+var ODs = {
+	en: 'English',
+	es: 'Spanish',
+	hi: 'Hindi',
+	id: 'Indonesian',
+	zu: 'isiZulu',
+	lv: 'Latvian',
+	ms: 'Malay',
+	nso: 'Northern Sotho',
+	ro: 'Romanian',
+	tn: 'Setswana',
+	sw: 'Swahili',
+	ur: 'Urdu'
+};
+
+var isoldsite;
 
 var o2p = function(o) {
 	if (Object.prototype.toString.call(o) == '[object Number]') {
@@ -36,16 +67,56 @@ var o2p = function(o) {
 	return a.join('&');
 };
 
-var jsonr = function(method, url, data, callback, callbackparam){
-	var xhr = new XMLHttpRequest();
-	xhr.open(method, url, true);
-	xhr.responseType = 'json';
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4) {
-			callback(xhr.response, callbackparam);
-		}
+var jsonr = function(method, url, data, callback, ex) {
+	if(!data) data = {};
+	if(!isoldsite) {
+		data['_'] = new Date().getTime();
+		//data['callback'] = 'jQuery0000000000000000000000_' + data['_'];
 	};
-	xhr.send(data);
+	$.ajax({
+		type: method.toUpperCase(),
+		url: url,
+		data: data,
+		success: function(r) {
+			if(!isoldsite){
+				window.r = r;
+				var rr = s2r(r);
+				if(rr) return callback(rr, ex);
+			}
+			callback(r, ex);
+		},
+		dataType: isoldsite ? 'json' : 'text',
+		headers: isoldsite ? {} : {
+			'Accept': 'text/javascript, application/javascript, application/ecmascript, application/x-ecmascript, */*; q=0.01',
+			//'Referer': url,
+			//'X-CSRF-Token': '',
+			'X-Requested-With': 'XMLHttpRequest',
+			'X-Origin': document.location.href
+		}
+	});
+};
+
+var s2r = function(js) {
+	var s = js.split('.html("');
+	if (s.length == 3) {
+		var s2 = s[2].split('");');
+		if (s2.length == 2) {
+			var s3 = s2[0];
+			try {
+				var h = JSON.parse('"' + s3 + '"');
+				var r = [];
+				$(h).find('li a').each(function(i, e) {
+					r.push({
+						searchtext: e.innerText,
+						href: e.getAttribute('href')
+					})
+				});
+				//{"results":[{"searchtext":"ENTRY"}]}
+				return {results: r};
+			} catch (e) {}
+		}
+	}
+	return false;
 };
 
 var text2tp = function(text) {
@@ -67,7 +138,7 @@ var autocomplete2suggest = function(data, extras) {
 			var re = new RegExp('(' + escapeRegExp(extras.text) + ')', 'i');
 			dictionaries.forEach(function(dict){
 				a.push({
-					content: vars.dict == dict ? v.searchtext : v.searchtext + '#' + dict,
+					content: vars.dict == dict ? v.href || v.searchtext : v.searchtext + '#' + dict,
 					description: '<url>' + v.searchtext.replace(re, '<match>$1</match>') + '</url><dim> from <url>' + sitedicts[vars.site][dict].label + '</url> of ' + sitenames[vars.site] + '</dim>'
 			});
 			});
@@ -129,7 +200,10 @@ var gotoword = function(text, disposition) {
 	if(text == '___CHANGE_SETTINGS___') return gotooptions();
 	var tp = text2tp(text.trimLeft());
 	var url = geturl(vars.site, 'search', tp.dict, tp.term);
-	if(url) navigate(url);
+	if(url) {
+		if(text.substr(0, 1) == '/') url = $('<a>').prop('href', url).prop('origin') + text;
+		navigate(url);
+	}
 	else gotooptions();
 };
 
@@ -142,20 +216,119 @@ var sitenames = {
 var siteurls = {
 	old: {
 		// http://www.oxfordlearnersdictionaries.com/autocomplete/american_english/?q=test&contentType=...
-		autocomplete: 'http://www.oxfordlearnersdictionaries.com/autocomplete/DICT/',
+		autocomplete: 'https://www.oxfordlearnersdictionaries.com/autocomplete/DICT/',
 		// http://www.oxfordlearnersdictionaries.com/search/english/?q=
-		searchall: 'http://www.oxfordlearnersdictionaries.com/search/DICT/',
-		search: 'http://www.oxfordlearnersdictionaries.com/search/DICT/'
+		searchall: 'https://www.oxfordlearnersdictionaries.com/search/DICT/',
+		search: 'https://www.oxfordlearnersdictionaries.com/search/DICT/'
 	},
 	_od: {
 		// http://www.oxforddictionaries.com/autocomplete/all/?multi=1&q=test&contentType=application%2Fjson%3B+charset%3Dutf-8
-		autocomplete: 'http://www.oxforddictionaries.com/autocomplete/DICT/', // ?multi=1&q=test&contentType=...
-		search: 'http://www.oxforddictionaries.com/search/', // ?direct=1&dictCode=english&q=test
-		searchall: 'http://www.oxforddictionaries.com/search/' // ?multi=1&dictCode=all&q=test
+		autocomplete: 'https://www.oxforddictionaries.com/autocomplete/DICT/', // ?multi=1&q=test&contentType=...
+		search: 'https://www.oxforddictionaries.com/search/', // ?direct=1&dictCode=english&q=test
+		searchall: 'https://www.oxforddictionaries.com/search/' // ?multi=1&dictCode=all&q=test
 	}
 };
+for (var k in ODs) {
+	sitenames[k] = 'Oxford Living Dictionaries - ' + ODs[k];
+	siteurls[k] = {};
+	siteurls[k]['search'] = siteurls[k]['searchall'] = siteurls[k]['autocomplete'] = 'https://' + k + '.oxforddictionaries.com/search';
+}
 
 /*
+20161212
+
+
+https://en.oxforddictionaries.com/search?callback=jQuery111103892465813912578_1481535430162&query=word&filter=dictionary&_=1481535430167
+https://en.oxforddictionaries.com/search?callback=jQuery111103892465813912578_1481535430162&query=word&filter=noad&_=1481535430170
+
+
+var s = ''; $.each($('.mainHeader form.search select.dictionary option'), function(i,e){s+= e.value + '\t' + e.innerText + '\n'}); console.log(s); copy(s)
+
+*/
+
+var ODdicts = `
+en
+
+dictionary	Dictionary	Eng (UK)
+noad	Dictionary (US)	Eng (US)
+grammar	Grammar
+thesaurus	Thesaurus
+
+
+es
+
+dictionary	Spanish
+to_english	Spanish - English
+from_english	English - Spanish
+grammar	Grammar
+
+
+hi
+
+dictionary	हिंदी
+
+
+lv
+
+dictionary	Latviešu vārdnīca
+
+
+ro
+
+dictionary	ROMÂNĂ
+from_english	ENGLEZĂ - ROMÂNĂ
+
+
+sw
+
+dictionary	Kiswahili
+`;
+
+
+/*
+
+*language_pair
+
+
+id
+
+english-indonesia	English to Indonesian
+indonesia-english	Indonesian to English
+
+
+zu
+
+english-isizulu	English to isiZulu
+isizulu-english	isiZulu to English
+
+
+ms
+
+english-bahasa_melayu	English to Malay
+bahasa_melayu-english	Malay to English
+
+
+nso
+
+english-sesothosaleboa	English to Northern Sotho
+sesothosaleboa-english	Northern Sotho to English
+
+
+tn
+
+english-setswana	English to Setswana
+setswana-english	Setswana to English
+
+
+ur
+
+اردو-english	Urdu to English
+
+
+
+
+OLD
+
 english English false
 american_english American English false
 practical-english-usage Practical English Usage true
@@ -231,11 +404,29 @@ var sitedicts = {
 	}
 };
 
+ODdicts.trim().split('\n\n\n').forEach(function(langdict) {
+	var ld = langdict.trim().split('\n\n');
+	var lang = ld[0];
+	sitedicts[lang] = {};
+	var ds = ld[1].trim().split('\n');
+	ds.forEach(function(dl) {
+		var d = dl.trim().split('\t');
+		sitedicts[lang][d[0]] = {
+			desc: d[1],
+			label: d[2] ? d[2] : d[1]
+		};
+	})
+});
+
 var geturl = function(site, action, dict, query) {
 	var url = (siteurls && siteurls[site] && siteurls[site][action] || '').replace('DICT', dict);
-	if(!url) return false;
-	var param = {q: query};
-	if (action == 'autocomplete') {
+	if(!url || !query) return false;
+	var param = {};
+	param[isoldsite ? 'q' : 'query'] = query;
+	if(!isoldsite) {
+		if(action != 'autocomplete') param['utf8'] = '%E2%9C%93'; // ✓
+		param['filter'] = dict;
+	} else if (action == 'autocomplete') {
 		param['contentType'] = 'application/json; charset=utf-8';
 		if(site == 'od') param['multi'] = 1;
 	} else if (action == 'search') {
@@ -253,7 +444,7 @@ var geturl = function(site, action, dict, query) {
 };
 
 var vars = {
-	dict: 'english',
+	dict: 'american_english',
 	site: 'old'
 };
 
@@ -267,7 +458,11 @@ var reloadvars = function(callback) {
 		}
 		vars = r;
 		if(!sitedicts.hasOwnProperty(vars.site)) vars.site = default_vars.site;
-		if(!sitedicts[vars.site].hasOwnProperty(vars.dict)) vars.dict = default_vars.dict;
+		if(!sitedicts[vars.site].hasOwnProperty(vars.dict)) {
+			vars.site = default_vars.site;
+			vars.dict = default_vars.dict;
+		}
+		isoldsite = ['old', 'od', '_od'].indexOf(vars.site) > -1;
 		if(callback) callback(r);
 	});
 };
